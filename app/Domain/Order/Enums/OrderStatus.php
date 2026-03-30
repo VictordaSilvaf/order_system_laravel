@@ -1,7 +1,10 @@
 <?php
 
+namespace App\Domain\Order\Enums;
+
 enum OrderStatus: string
 {
-    case DRAFT = 'draft';
-    case FINALIZED = 'finalized';
+    case PENDING = 'pending';
+    case APPROVED = 'approved';
+    case CANCELED = 'canceled';
 }

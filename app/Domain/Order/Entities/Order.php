@@ -1,61 +1,71 @@
 <?php
 
+declare(strict_types=1);
+
+namespace App\Domain\Order\Entities;
+
+use App\Domain\Order\ValueObjects\OrderId;
+use App\Domain\Order\Enums\OrderStatus;
+use App\Domain\Order\Exceptions\EmptyOrderException;
+
 final class Order
 {
     private array $items = [];
+    private OrderStatus $status;
 
     private function __construct(
-        public readonly string $id,
-        private OrderStatus $status
-    ) {}
-
-    public static function create(): self
-    {
-        return new self(
-            id: uuid_create(UUID_TYPE_RANDOM),
-            status: OrderStatus::DRAFT
-        );
+        public readonly OrderId $id,
+    ) {
+        $this->status = OrderStatus::PENDING;
     }
 
-    public function addItem(string $productId, int $qty, float $price): void
+    public static function reconstruct(OrderId $id, OrderStatus $status, array $items = []): self
     {
-        $this->assertNotFinalized();
+        $order = new self($id);
+        $order->status = $status;
 
-        $this->items[] = new OrderItem($productId, $qty, $price);
+        foreach ($items as $item) {
+            $order->addItem($item);
+        }
+
+        return $order;
     }
 
-    public function removeItem(string $productId): void
+    public static function create(OrderId $id): self
     {
-        $this->assertNotFinalized();
-
-        $this->items = array_filter(
-            $this->items,
-            fn(OrderItem $item) => $item->productId !== $productId
-        );
+        return new self($id);
     }
 
-    public function total(): float
+    public function addItem(OrderItem $item): void
     {
-        return array_reduce(
-            $this->items,
-            fn($total, OrderItem $item) => $total + $item->subtotal(),
-            0
-        );
+        if ($this->status !== OrderStatus::PENDING) {
+            throw new \DomainException('Não é possível adicionar itens a um pedido que não está pendente');
+        }
+
+        $this->items[] = $item;
     }
 
-    public function finalize(): void
+    public function approve(): void
     {
         if (empty($this->items)) {
-            throw new DomainException('Pedido vazio');
+            throw new EmptyOrderException();
         }
 
-        $this->status = OrderStatus::FINALIZED;
+        $this->status = OrderStatus::APPROVED;
     }
 
-    private function assertNotFinalized(): void
+    public function items(): array
     {
-        if ($this->status === OrderStatus::FINALIZED) {
-            throw new DomainException('Pedido já finalizado');
-        }
+        return $this->items;
+    }
+
+    public function id(): OrderId
+    {
+        return $this->id;
+    }
+
+    public function status(): OrderStatus
+    {
+        return $this->status;
     }
 }

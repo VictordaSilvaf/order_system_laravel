@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StoreOrderRequest;
+use App\Application\Order\UseCases\CreateOrderUseCase;
 use App\Http\Requests\UpdateOrderRequest;
 use App\Models\Order;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class OrderController extends Controller
 {
@@ -27,17 +29,33 @@ class OrderController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreOrderRequest $request)
+    public function store(Request $request, CreateOrderUseCase $useCase)
     {
-        //
+        $orderId = $useCase->execute(
+            $request->input('items', [])
+        );
+
+        return response()->json([
+            'order_id' => $orderId
+        ]);
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(Order $order)
+    public function show(string $id): JsonResponse
     {
-        //
+        $order = Order::query()
+            ->with('items')
+            ->where('id', $id)
+            ->firstOrFail();
+
+        return response()->json([
+            'id' => $order->id,
+            'status' => $order->status,
+            'items' => $order->items,
+            'created_at' => $order->created_at,
+        ]);
     }
 
     /**

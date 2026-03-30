@@ -1,23 +1,27 @@
 <?php
 
+declare(strict_types=1);
+
+namespace App\Domain\Order\Entities;
+
+use App\Domain\Order\ValueObjects\ProductId;
+
 final class OrderItem
 {
     public function __construct(
-        public readonly string $productId,
-        public readonly int $quantity,
-        public readonly float $price
-    ) {
-        if ($quantity <= 0) {
-            throw new InvalidArgumentException();
-        }
+        private readonly ProductId $productId,
+        private readonly int $quantity
+    ) {}
 
-        if ($price <= 0) {
-            throw new InvalidArgumentException();
-        }
+    // getter para ProductId
+    public function productId(): ProductId
+    {
+        return $this->productId;
     }
 
-    public function subtotal(): float
+    // getter para quantidade
+    public function quantity(): int
     {
-        return $this->quantity * $this->price;
+        return $this->quantity;
     }
 }
