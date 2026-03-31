@@ -12,4 +12,7 @@ interface OrderRepository
     public function save(Order $order): void;
 
     public function findById(OrderId $id): ?Order;
+
+    /** @return Order[] */
+    public function findAll(): array;
 }

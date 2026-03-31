@@ -4,29 +4,36 @@ declare(strict_types=1);
 
 namespace App\Domain\Order\Entities;
 
-use App\Domain\Order\ValueObjects\OrderId;
+use DateTimeImmutable;
 use App\Domain\Order\Enums\OrderStatus;
+use App\Domain\Order\ValueObjects\OrderId;
 use App\Domain\Order\Exceptions\EmptyOrderException;
 
 final class Order
 {
     private array $items = [];
     private OrderStatus $status;
+    private DateTimeImmutable $createdAt;
 
     private function __construct(
         public readonly OrderId $id,
     ) {
         $this->status = OrderStatus::PENDING;
+        $this->createdAt = new DateTimeImmutable();
     }
 
-    public static function reconstruct(OrderId $id, OrderStatus $status, array $items = []): self
-    {
+    public static function reconstruct(
+        OrderId $id,
+        OrderStatus $status,
+        DateTimeImmutable $createdAt,
+        array $items = []
+    ): self {
         $order = new self($id);
-        $order->status = $status;
 
-        foreach ($items as $item) {
-            $order->addItem($item);
-        }
+        $order->status = $status;
+        $order->createdAt = $createdAt;
+
+        $order->items = $items;
 
         return $order;
     }

@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace App\Infrastructure\Persistence\Eloquent\Repositories;
 
 use App\Domain\Order\Entities\Order;
+use App\Domain\Order\Repositories\OrderRepository;
 use App\Domain\Order\ValueObjects\OrderId;
-use App\Domain\Order\Repositories\OrderRepository as OrderRepositoryInterface;
 use App\Models\Order as OrderModel;
 use App\Models\OrderItem as OrderItemModel;
 
-final class EloquentOrderRepository implements OrderRepositoryInterface
+final class EloquentOrderRepository implements OrderRepository
 {
     public function save(Order $order): void
     {
@@ -44,7 +44,7 @@ final class EloquentOrderRepository implements OrderRepositoryInterface
             return null;
         }
 
-        $order = Order::reconstruct($id, $orderModel->status);
+        $order = Order::reconstruct($id, $orderModel->status, $orderModel->created_at, []);
 
         foreach ($order->items() as $item) {
             OrderItemModel::updateOrCreate(
@@ -59,5 +59,27 @@ final class EloquentOrderRepository implements OrderRepositoryInterface
         }
 
         return $order;
+    }
+
+    public function findAll(): array
+    {
+        $orders = OrderModel::with('items')->get();
+
+        return $orders->map(function ($order) {
+            return $this->toDomain($order);
+        })->toArray();
+    }
+
+    private function toDomain(OrderModel $order): Order
+    {
+        return Order::reconstruct(
+            id: $order->id,
+            status: $order->status,
+            items: $order->items->map(fn($item) => [
+                'product_id' => $item->product_id,
+                'quantity' => $item->quantity,
+            ])->toArray(),
+            createdAt: $order->created_at
+        );
     }
 }

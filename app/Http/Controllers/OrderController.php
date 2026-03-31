@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Application\Order\UseCases\CreateOrderUseCase;
+use App\Application\Order\UseCases\ListOrdersUseCase;
 use App\Http\Requests\UpdateOrderRequest;
 use App\Models\Order;
 use Illuminate\Http\JsonResponse;
@@ -13,9 +14,11 @@ class OrderController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(ListOrdersUseCase $useCase): JsonResponse
     {
-        //
+        return response()->json(
+            $useCase->execute()
+        );
     }
 
     /**
